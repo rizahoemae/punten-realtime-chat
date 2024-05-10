@@ -73,12 +73,19 @@ const conversations = ref([
     ],
   },
 ]);
+
+const addFriend = () => {
+  conversations.value[2].messages[1].isFriend = true;
+  modal.addFriend = false;
+};
 const selected = ref();
 const message = ref("");
 const isReceiving = ref(false);
 const modal = reactive({
   addFriend: false,
 });
+
+let intervalId;
 
 const sendMessage = () => {
   let obj = {
@@ -92,25 +99,27 @@ const sendMessage = () => {
   find.messages.push(obj);
   message.value = "";
   if (!isReceiving.value) {
-    receiveMessage();
+    console.log(isReceiving.value);
+
+    isReceiving.value = true;
+    intervalId = setTimeout(() => {
+      console.log("set");
+      receiveMessage();
+      isReceiving.value = false;
+    }, 3000);
   }
 };
 
-let intervalId;
-
 const receiveMessage = () => {
-  intervalId = setInterval(() => {
-    let obj = {
-      sender: selected.value.sender,
-      message: "Naon?",
-    };
+  let obj = {
+    sender: selected.value.sender,
+    message: "Naon?",
+  };
 
-    const find = conversations.value.find(
-      (convo) => convo.id == selected.value.id
-    );
-    find.messages.push(obj);
-  }, 3000);
-  isReceiving.value = true;
+  const find = conversations.value.find(
+    (convo) => convo.id == selected.value.id
+  );
+  find.messages.push(obj);
 };
 </script>
 <template>
@@ -154,7 +163,7 @@ const receiveMessage = () => {
           </li>
         </ul>
       </div>
-      <div class="w-full">
+      <div class="w-full relative">
         <div v-if="selected" class="w-full h-full p-5 border-l relative">
           <div
             v-if="selected.type == 'group'"
@@ -195,10 +204,10 @@ const receiveMessage = () => {
                   <span class="text-sm font-semibold text-gray-900">{{
                     chat.sender
                   }}</span>
+
                   <span
-                    data-modal-target="default-modal"
-                    data-modal-toggle="default-modal"
                     v-if="!chat.isFriend && selected.type == 'group'"
+                    @click="modal.addFriend = true"
                     class="text-sm font-normal text-blue-500 cursor-pointer"
                     ><svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -325,85 +334,78 @@ const receiveMessage = () => {
         >
           <p>Select a chat to start conversation</p>
         </div>
-      </div>
-    </div>
-    <!-- Main modal -->
-    <div
-      id="default-modal"
-      tabindex="-1"
-      aria-hidden="true"
-      class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
-    >
-      <div class="relative p-4 w-full max-w-2xl max-h-full">
-        <!-- Modal content -->
-        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-          <!-- Modal header -->
-          <div
-            class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600"
-          >
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-              Terms of Service
-            </h3>
-            <button
-              type="button"
-              class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-              data-modal-hide="default-modal"
-            >
-              <svg
-                class="w-3 h-3"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 14 14"
+        <div></div>
+        <!-- Main modal -->
+        <div
+          id="progress-modal"
+          tabindex="-1"
+          aria-hidden="true"
+          :class="modal.addFriend ? 'block' : 'hidden'"
+          class="overflow-y-auto border overflow-x-hidden absolute flex justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
+        >
+          <div class="relative p-4 w-full max-w-md max-h-full">
+            <!-- Modal content -->
+            <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+              <button
+                @click="modal.addFriend = false"
+                type="button"
+                class="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                data-modal-hide="progress-modal"
               >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
-                />
-              </svg>
-              <span class="sr-only">Close modal</span>
-            </button>
-          </div>
-          <!-- Modal body -->
-          <div class="p-4 md:p-5 space-y-4">
-            <p
-              class="text-base leading-relaxed text-gray-500 dark:text-gray-400"
-            >
-              With less than a month to go before the European Union enacts new
-              consumer privacy laws for its citizens, companies around the world
-              are updating their terms of service agreements to comply.
-            </p>
-            <p
-              class="text-base leading-relaxed text-gray-500 dark:text-gray-400"
-            >
-              The European Union’s General Data Protection Regulation (G.D.P.R.)
-              goes into effect on May 25 and is meant to ensure a common set of
-              data rights in the European Union. It requires organizations to
-              notify users as soon as possible of high-risk data breaches that
-              could personally affect them.
-            </p>
-          </div>
-          <!-- Modal footer -->
-          <div
-            class="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600"
-          >
-            <button
-              data-modal-hide="default-modal"
-              type="button"
-              class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            >
-              I accept
-            </button>
-            <button
-              data-modal-hide="default-modal"
-              type="button"
-              class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-            >
-              Decline
-            </button>
+                <svg
+                  class="w-3 h-3"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 14 14"
+                >
+                  <path
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+                  />
+                </svg>
+                <span class="sr-only">Close modal</span>
+              </button>
+              <div class="p-4 md:p-5">
+                <h3
+                  class="mb-1 text-xl font-bold flex items-center text-gray-900 dark:text-white"
+                >
+                  <img
+                    class="w-10 h-10 object-cover rounded-full mr-2"
+                    src="https://i.pinimg.com/564x/5c/b9/78/5cb978c7b18ae304a0c5f8532a76bb0a.jpg"
+                    alt="Rounded avatar"
+                  />
+
+                  +62812345678
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-6">
+                  Add this contact to your friends?
+                </p>
+                <p></p>
+                <!-- Modal footer -->
+                <div
+                  class="flex items-center mt-6 space-x-4 rtl:space-x-reverse"
+                >
+                  <button
+                    @click="addFriend"
+                    type="button"
+                    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                  >
+                    Add a friend
+                  </button>
+                  <button
+                    @click="modal.addFriend = false"
+                    type="button"
+                    class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
